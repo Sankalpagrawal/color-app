@@ -3,141 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Quest Game</title>
+    <title>Toddler Color Guess</title>
     <style>
         body {
             margin: 0;
+            font-family: 'Arial Rounded MT Bold', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            font-family: 'Arial Rounded MT Bold', sans-serif;
-            background-color: #f8f9fa;
-            transition: background-color 0.6s ease;
+            background-color: #f0f0f0;
             overflow: hidden;
-            text-align: center;
+            touch-action: manipulation;
         }
 
-        #display-area {
-            font-size: 12rem;
-            margin-bottom: 10px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        #color-display {
+            width: 80vw;
+            height: 50vh;
+            border: 15px solid white;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
         }
 
-        #status {
-            font-size: 3rem;
-            font-weight: bold;
+        #status-text {
+            font-size: 2.5rem;
             color: #333;
-            margin: 20px;
-            padding: 0 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            height: 60px;
         }
 
-        .controls {
-            display: flex;
-            gap: 20px;
-        }
-
-        button {
-            padding: 30px 50px;
+        #mic-button {
+            padding: 20px 50px;
             font-size: 2rem;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
             border: none;
-            border-radius: 50px;
-            box-shadow: 0 8px #999;
-            transition: all 0.1s;
+            border-radius: 100px;
+            box-shadow: 0 8px #2E7D32;
         }
 
-        #listen-btn { background-color: #4cd137; color: white; box-shadow: 0 8px #44bd32; }
-        #next-btn { background-color: #00a8ff; color: white; box-shadow: 0 8px #0097e6; }
-
-        button:active {
-            box-shadow: 0 2px #666;
-            transform: translateY(6px);
+        #mic-button:active {
+            box-shadow: 0 4px #2E7D32;
+            transform: translateY(4px);
         }
 
-        .bounce { transform: scale(1.2); }
+        .celebrate {
+            animation: bounce 0.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body>
 
-    <div id="display-area">🌟</div>
-    <div id="status">Ready to play?</div>
-    
-    <div class="controls">
-        <button id="next-btn">NEW COLOR</button>
-        <button id="listen-btn">I'M READY!</button>
-    </div>
+    <div id="status-text">Tap the button and say the color!</div>
+    <div id="color-display"></div>
+    <button id="mic-button">🎤 Talk</button>
 
     <script>
-        const listenBtn = document.querySelector('#listen-btn');
-        const nextBtn = document.querySelector('#next-btn');
-        const status = document.querySelector('#status');
-        const display = document.querySelector('#display-area');
-        const body = document.querySelector('body');
+        const colors = ['Red', 'Blue', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
+        let currentColor = '';
 
-        const magicObjects = {
-            'red': { emoji: '🍎', name: 'Red' },
-            'yellow': { emoji: '🍌', name: 'Yellow' },
-            'blue': { emoji: '🫐', name: 'Blue' },
-            'green': { emoji: '🥦', name: 'Green' },
-            'orange': { emoji: '🍊', name: 'Orange' },
-            'purple': { emoji: '🍇', name: 'Purple' },
-            'pink': { emoji: '🐷', name: 'Pink' }
-        };
+        const display = document.getElementById('color-display');
+        const status = document.getElementById('status-text');
+        const btn = document.getElementById('mic-button');
 
-        let targetColor = "";
-        const colors = Object.keys(magicObjects);
-
-        function askForColor() {
-            targetColor = colors[Math.floor(Math.random() * colors.length)];
-            body.style.backgroundColor = "#f8f9fa";
-            display.innerText = "❓";
-            status.innerText = `Can you say ${targetColor.toUpperCase()}?`;
-            
-            const msg = new SpeechSynthesisUtterance(`Can you say ${targetColor}?`);
-            window.speechSynthesis.speak(msg);
-        }
-
+        // Initialize Speech Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
+        recognition.continuous = false;
 
-        listenBtn.addEventListener('click', () => {
+        function nextColor() {
+            currentColor = colors[Math.floor(Math.random() * colors.length)];
+            display.style.backgroundColor = currentColor;
+            display.classList.remove('celebrate');
+            status.innerText = "What color is this?";
+            speak("What color is this?");
+        }
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.pitch = 1.2;
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        btn.addEventListener('click', () => {
             recognition.start();
-            status.innerText = "Listening... 👂";
+            status.innerText = "Listening...";
+            btn.style.backgroundColor = "#ff5722";
         });
 
-        nextBtn.addEventListener('click', askForColor);
-
         recognition.onresult = (event) => {
-            const spokenText = event.results[0][0].transcript.toLowerCase();
+            const speechResult = event.results[0][0].transcript.toLowerCase();
+            btn.style.backgroundColor = "#4CAF50";
             
-            if (spokenText.includes(targetColor)) {
-                // SUCCESS
-                body.style.backgroundColor = targetColor;
-                display.innerText = magicObjects[targetColor].emoji;
-                display.classList.add('bounce');
-                status.innerText = "YAY! YOU DID IT! 🎉";
-                
-                const msg = new SpeechSynthesisUtterance(`Yay! That is ${targetColor}!`);
-                window.speechSynthesis.speak(msg);
-                
-                setTimeout(() => {
-                    display.classList.remove('bounce');
-                }, 1000);
+            if (speechResult.includes(currentColor.toLowerCase())) {
+                status.innerText = "Yay! It's " + currentColor + "!";
+                display.classList.add('celebrate');
+                speak("Yay! You got it! It's " + currentColor);
+                setTimeout(nextColor, 3000);
             } else {
-                // TRY AGAIN
-                status.innerText = `I heard ${spokenText}. Try again!`;
-                const msg = new SpeechSynthesisUtterance(`Not quite. Try saying ${targetColor}`);
-                window.speechSynthesis.speak(msg);
+                status.innerText = "Try again! You said " + speechResult;
+                speak("Not quite! Try again.");
             }
         };
 
-        // Start the game on first interaction
-        window.onload = () => {
-            status.innerText = "Tap NEW COLOR to start!";
+        recognition.onspeechend = () => {
+            recognition.stop();
         };
+
+        recognition.onerror = () => {
+            btn.style.backgroundColor = "#4CAF50";
+            status.innerText = "Oops, I didn't hear you.";
+        };
+
+        // Start the game
+        window.onload = nextColor;
     </script>
 </body>
 </html>
